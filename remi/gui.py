@@ -94,7 +94,6 @@ class Widget(object):
         self.widget_spacing = widget_spacing
 
         # some constants for the events
-        self.BASE_ADDRESS = BASE_ADDRESS
         self.EVENT_ONCLICK = 'onclick'
         self.EVENT_ONDBLCLICK = 'ondblclick'
         self.EVENT_ONMOUSEDOWN = 'onmousedown'
@@ -686,7 +685,7 @@ class Image(Widget):
         """filename should be an URL."""
         super(Image, self).__init__(w, h)
         self.type = 'img'
-        self.attributes['src'] = BASE_ADDRESS + filename
+        self.attributes['src'] = remi.server.get_path(filename)
 
     def onclick(self):
         return self.eventManager.propagate(self.EVENT_ONCLICK, list())
@@ -1094,7 +1093,7 @@ class FileUploader(Widget):
         self.EVENT_ON_SUCCESS = 'onsuccess'
         self.EVENT_ON_FAILED = 'onfailed'
         fileUploadScript = "function uploadFile(savePath,file){\
-            var url = 'http://" + IP_ADDR + ':' + str(HTTP_PORT_NUMBER) + "';\
+            var url = '" + remi.server.get_path() + "';\
             var xhr = new XMLHttpRequest();\
             var fd = new FormData();\
             xhr.open('POST', url, true);\
@@ -1144,7 +1143,7 @@ class FileDownloader(Widget):
         super(FileDownloader, self).__init__(w, h, Widget.LAYOUT_HORIZONTAL)
         self.type = 'a'
         self.attributes['download'] = ''
-        self.attributes['href'] = "http://" + IP_ADDR + ":" + str(HTTP_PORT_NUMBER) + '/' + filePathName
+        self.attributes['href'] = remi.server.get_path(filePathName)
         self.set_text(text)
 
     def set_text(self, t):
