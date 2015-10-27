@@ -549,71 +549,23 @@ ws.onerror = function(evt){
         return
 
     def process_all(self, function):
-        ispath = True
-        snake = None
-        doNotCallMain = False
+        if (function == '/') or (not function):
+            # build the root page once if necessary
+            should_call_main = not hasattr(self.client, 'root')
+            if should_call_main:
+                self.client.root = self.main()
 
-        if len(function.split('/')) > 1:
-            for attr in function.split('/'):
-                if len(attr) == 0:
-                    continue
-                if ispath == False:
-                    break
-                if snake is None:
-                    snake = get_method_by(self.client.root, attr)
-                    ispath = ispath and (None != snake)
-                    continue
-                snake = get_method_by(snake, attr)
-                ispath = ispath and (None != snake)
+            self.send_response(200)
+            self.send_header('Content-type', 'text/html')
+            self.end_headers()
+            self.wfile.write(encodeIfPyGT3(
+                "<link href='/res/style.css' rel='stylesheet' /><meta content='text/html;charset=utf-8' http-equiv='Content-Type'><meta content='utf-8' http-equiv='encoding'> "))
+            self.wfile.write(encodeIfPyGT3(self.client.attachments))
+            # render the HTML
+            html = self.client.root.repr(self.client)
+            self.wfile.write(encodeIfPyGT3(html))
         else:
-            function = function.replace('/', '')
-            if len(function) > 0:
-                snake = get_method_by(self.client, function)
-                ispath = ispath and (None != snake)
-            else:
-                doNotCallMain = hasattr(self.client, 'root')
-                ispath = True
-                snake = self.main
-
-        if ispath:
-            ret = None
-            if not doNotCallMain:
-                ret = snake()
-
-                # setting up the root widget, if the 'ret' becomes from the
-                # main call
-                if snake == self.main:
-                    self.client.root = ret
-                    ret = None
-
-            if ret is None:
-                self.send_response(200)
-                self.send_header('Content-type', 'text/html')
-                self.end_headers()
-                
-                self.wfile.write(encodeIfPyGT3(
-                    "<link href='/res/style.css' rel='stylesheet' /><meta content='text/html;charset=utf-8' http-equiv='Content-Type'><meta content='utf-8' http-equiv='encoding'> "))
-
-                self.wfile.write(encodeIfPyGT3(self.client.attachments))
-                # render the HTML replacing any local absolute references to the correct IP of this instance
-                html = self.client.root.repr(self.client)
-                self.wfile.write(encodeIfPyGT3(html))
-            else:
-                # here is the function that should return the content type
-                self.send_response(200)
-                self.send_header('Content-type', ret[1])
-
-                self.end_headers()
-
-                # if is requested a widget, but not by post, so we suppose is
-                # requested to show a new page, we attach javascript and style
-                if ret[1] == 'text/html':
-                    self.wfile.write(encodeIfPyGT3(
-                        "<link href='/res/style.css' rel='stylesheet' /><meta content='text/html;charset=utf-8' http-equiv='Content-Type'><meta content='utf-8' http-equiv='encoding'> "))
-                    self.wfile.write(encodeIfPyGT3(self.client.attachments))
-                self.wfile.write(encodeIfPyGT3(ret[0]))
-
-        else:
+            # static file
             self.send_response(200)
             self.send_header('Content-type', 'text/html')
             if ENABLE_FILE_CACHE:
@@ -632,10 +584,7 @@ ws.onerror = function(evt){
                 f.close()
                 self.wfile.write(content)
             except:
-                raise
                 debug_alert('Managed exception in server.py - App.process_all. The requested file was not found or cannot be opened ',filename)
-                #print(traceback.format_exc())
-
 
 
 class ThreadedHTTPServer(socketserver.ThreadingMixIn, HTTPServer):
