@@ -493,7 +493,7 @@ ws.onerror = function(evt){
             updateTimerStarted = True
             Timer(UPDATE_INTERVAL, update_clients, ()).start()
 
-    def idle(self):
+    def idle(self, *args):
         """ Idle function called every UPDATE_INTERVAL before the gui update.
             Usefull to schedule tasks. """
         pass
@@ -556,7 +556,8 @@ ws.onerror = function(evt){
             # build the root page once if necessary
             should_call_main = not hasattr(self.client, 'root')
             if should_call_main:
-                self.client.root = self.main()
+                self.client.root = self.main(*self.server.main_args)
+
             self.send_response(200)
             self.send_header('Content-type', 'text/html')
             self.end_headers()
@@ -602,22 +603,27 @@ class ThreadedHTTPServer(socketserver.ThreadingMixIn, HTTPServer):
     """
     daemon_threads = True
 
-    def __init__(self, server_address, RequestHandlerClass, websocket_address):
+    def __init__(self, server_address, RequestHandlerClass, websocket_address, *main_args):
         HTTPServer.__init__(self, server_address, RequestHandlerClass)
         self.websocket_address = websocket_address
+        self.main_args = main_args
 
 
 class Server(object):
-    def __init__(self, gui_class, start=True, address='127.0.0.1', port=8081):
+    def __init__(self, gui_class, start=True, address='127.0.0.1', port=8081, userdata=()):
         self._gui = gui_class
         self._wsserver = self._sserver = None
         self._wsth = self._sth = None
         self._address = address
         self._sport = port
-        if start:
-            self.start()
 
-    def start(self):
+        if not isinstance(userdata, tuple):
+            raise ValueError('userdata must be a tuple')
+
+        if start:
+            self.start(*userdata)
+
+    def start(self, *main_args):
         # here the websocket is started on an ephemereal port
         self._wsserver = ThreadedWebsocketServer((self._address, 0), WebSocketsHandler)
         wshost, wsport = self._wsserver.socket.getsockname()[:2]
@@ -628,7 +634,7 @@ class Server(object):
         
         # Create a web server and define the handler to manage the incoming
         # request
-        self._sserver = ThreadedHTTPServer((self._address, self._sport), self._gui, (wshost, wsport))
+        self._sserver = ThreadedHTTPServer((self._address, self._sport), self._gui, (wshost, wsport), *main_args)
         shost, sport = self._sserver.socket.getsockname()[:2]
         base_address = 'http://%s:%s/' % (shost, sport)
         debug_message('Started httpserver %s' % base_address)

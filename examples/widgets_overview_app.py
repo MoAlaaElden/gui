@@ -21,12 +21,12 @@ class MyApp(App):
     def __init__(self, *args):
         super(MyApp, self).__init__(*args)
         
-    def idle(self):
+    def idle(self, *main_args):
         """ Usefull function to schedule tasks. 
         Called every configuration.UPDATE_ITERVAL """
-        super(MyApp, self).idle()
+        super(MyApp, self).idle(*main_args)
         
-    def main(self):
+    def main(self, *main_args):
         verticalContainer = gui.Widget(640, 680, gui.Widget.LAYOUT_VERTICAL, 10)
 
         horizontalContainer = gui.Widget(620, 620, gui.Widget.LAYOUT_HORIZONTAL, 10)
