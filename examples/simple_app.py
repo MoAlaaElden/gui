@@ -21,7 +21,7 @@ class MyApp(App):
     def __init__(self, *args):
         super(MyApp, self).__init__(*args)
 
-    def main(self):
+    def main(self, *args):
         # the arguments are	width - height - layoutOrientationOrizontal
         wid = gui.Widget(120, 100, False, 10)
         self.lbl = gui.Label(100, 30, 'Hello world!')
