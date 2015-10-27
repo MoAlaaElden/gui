@@ -123,7 +123,14 @@ class Widget(object):
 
         self.eventManager = EventManager()
 
-    def __repr__(self):
+    @staticmethod
+    def _replace_client_specific_values(html, client):
+        ip,port = client.server.server_address
+        runtime_state = {ServerConstantsTemplate.HTTP_IP:ip,
+                         ServerConstantsTemplate.HTTP_PORT:port}
+        return ServerConstantsTemplate(html).substitute(**runtime_state)
+
+    def repr(self, client):
         """it is used to automatically represent the widget to HTML format
         packs all the attributes, children and so on."""
         self['style'] = jsonize(self.style)
@@ -136,12 +143,13 @@ class Widget(object):
             if isinstance(s, type('')):
                 innerHTML = innerHTML + s
             else:
-                innerHTML = innerHTML + repr(s)
+                innerHTML = innerHTML + s.repr(client)
 
-        return '<%s %s>%s</%s>' % (self.type, ' '.join(map(lambda k, v: k + "=\"" + str(
+        html = '<%s %s>%s</%s>' % (self.type, ' '.join(map(lambda k, v: k + "=\"" + str(
             v) + "\"", self.attributes.keys(), self.attributes.values())), innerHTML, self.type)
+        return self._replace_client_specific_values(html, client)
 
-    def repr_without_children(self):
+    def repr_without_children(self, client):
         """it is used to automatically represent the widget to HTML format
         packs all the attributes."""
         self['style'] = jsonize(self.style)
@@ -154,8 +162,9 @@ class Widget(object):
             if isinstance(s, type('')):
                 innerHTML = innerHTML + s
 
-        return '<%s %s>%s</%s>' % (self.type, ' '.join(map(lambda k, v: k + "=\"" + str(
+        html = '<%s %s>%s</%s>' % (self.type, ' '.join(map(lambda k, v: k + "=\"" + str(
             v) + "\"", self.attributes.keys(), self.attributes.values())), innerHTML, self.type)
+        return self._replace_client_specific_values(html, client)
 
     def __setitem__(self, key, value):
         """it is used for fast access to 'self.attributes[]'."""
